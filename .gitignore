@@ -1,0 +1,29 @@
+# Build outputs
+bin/
+obj/
+publish/
+*.o
+*.lo
+*.la
+*.dylib
+*.so
+*.a
+!artifacts/*.dylib
+!artifacts/*.so
+
+# Temp / logs
+*.log
+/tmp/
+
+# macOS
+.DS_Store
+
+# .NET
+*.user
+*.suo
+
+# Runtime install (lives in $HOME, not repo)
+.hplip-scan/
+
+# Keep prebuilt artifacts (needed for install.sh)
+# artifacts/ is intentionally committed

@@ -1,0 +1,17 @@
+--- a/scan/sane/orblite.c
++++ b/scan/sane/orblite.c
+@@ -20,9 +20,14 @@
+ #include "orblitei.h"
+ #include "orblite.h"//Added New
+ #include <math.h>
++#include <dlfcn.h>
+ #include "utils.h"
+ #include "io.h"
+ 
++#ifndef _DBG
++#define _DBG(...)
++#endif
++
+ #ifdef __cplusplus
+  }
+ #endif 

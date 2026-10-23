@@ -1,0 +1,10 @@
+--- a/io/hpmud/jd.c
++++ b/io/hpmud/jd.c
+@@ -31,6 +31,7 @@
+ #endif
+ 
+ #include <signal.h>
++#include <stdlib.h>
+ #include "hpmud.h"
+ #include "hpmudi.h"
+ 

@@ -1,0 +1,19 @@
+--- a/scan/sane/orblitei.h
++++ b/scan/sane/orblitei.h
+@@ -140,5 +140,16 @@
+ 
+ typedef struct t_SANE * SANE_THandle;
+ 
++extern SANE_Status orblite_init(SANE_Int *version_code, SANE_Auth_Callback authorize);
++extern SANE_Status orblite_get_devices(const SANE_Device ***device_list, SANE_Bool local_only);
++extern void orblite_exit(void);
++extern SANE_Status orblite_open(SANE_String_Const devicename, SANE_Handle *handle);
++extern void orblite_close(SANE_Handle handle);
++extern const SANE_Option_Descriptor *orblite_get_option_descriptor(SANE_Handle handle, SANE_Int option);
++extern SANE_Status orblite_control_option(SANE_Handle handle, SANE_Int option, SANE_Action action, void *value, SANE_Int *info);
++extern SANE_Status orblite_start(SANE_Handle handle);
++extern SANE_Status orblite_get_parameters(SANE_Handle handle, SANE_Parameters *params);
++extern SANE_Status orblite_read(SANE_Handle handle, SANE_Byte *data, SANE_Int max_length, SANE_Int *length);
++extern void orblite_cancel(SANE_Handle handle);
+ 
+ #endif

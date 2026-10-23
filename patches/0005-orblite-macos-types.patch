@@ -1,0 +1,13 @@
+--- a/scan/sane/OrbliteScan/MacCommon.h
++++ b/scan/sane/OrbliteScan/MacCommon.h
+@@ -2,8 +2,9 @@
+ #define H_MacCommon
+ 
+ #ifndef __linux__
+-#include <CoreFoundation/CFPlugInCOM.h>
+ #define __CFPlugInCOM_Included__
++typedef unsigned short UInt16;
++typedef unsigned int UInt32;
+ #endif
+ 
+ #ifdef __linux__

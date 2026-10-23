@@ -1,0 +1,119 @@
+#!/bin/zsh
+# Сканирование на HP LaserJet 3055 через SANE/HPLIP (hpaio).
+# По умолчанию: плоский сканер, A4, серый, 300 dpi, результат — PDF.
+set -euo pipefail
+
+ROOT="$HOME/.hplip-scan"
+SCANIMAGE="/opt/homebrew/bin/scanimage"
+MERGEPDF="$ROOT/bin/pdfmerge"
+
+IP="$(sed -n 's/^ip=//p' "$ROOT/printer.conf" 2>/dev/null | head -1)"
+IP="${IP:-192.168.1.118}"
+
+MODE="Gray"
+DPI="300"
+SOURCE="Auto"
+BATCH="no"
+WIDTH="210mm"
+HEIGHT="297mm"
+FORMAT="pdf"
+OUT=""
+DO_OPEN=1
+
+usage() {
+  cat <<EOF
+Использование: hp3055-scan [опции]
+
+  --adf            сканировать из автоподатчика (ADF), многократно
+  --color          цветной режим (по умолчанию серый)
+  --lineart        чёрно-белый (1 bit)
+  --dpi N          разрешение: 75|100|150|200|300|600|1200 (по умолчанию 300)
+  --letter         размер Letter вместо A4
+  --a4             размер A4 (по умолчанию)
+  --png            сохранить PNG вместо PDF
+  --out PATH       путь результата (для ADF — путь к PDF)
+  --no-open        не открывать результат
+  --ip ADDR        IP принтера (по умолчанию из $ROOT/printer.conf)
+  -h, --help       эта справка
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --adf) SOURCE="ADF"; BATCH="yes" ;;
+    --color) MODE="Color" ;;
+    --lineart) MODE="Lineart" ;;
+    --dpi) DPI="$2"; shift ;;
+    --letter) WIDTH="8.5in"; HEIGHT="11in" ;;
+    --a4) WIDTH="210mm"; HEIGHT="297mm" ;;
+    --png) FORMAT="png" ;;
+    --out) OUT="$2"; shift ;;
+    --no-open) DO_OPEN=0 ;;
+    --ip) IP="$2"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Неизвестная опция: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+DEVICE="hpaio:/net/HP_LaserJet_3055?ip=$IP"
+OUTDIR="$HOME/Documents/Scans"
+STAMP="$(date '+%Y-%m-%d_%H-%M-%S')"
+mkdir -p "$OUTDIR"
+[[ -n "$OUT" ]] || OUT="$OUTDIR/scan-$STAMP.${FORMAT}"
+
+LOCK="$ROOT/scan.lock"
+if ! mkdir "$LOCK" 2>/dev/null; then
+  echo "Сканирование уже выполняется (lock: $LOCK)." >&2
+  exit 1
+fi
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/hp3055.XXXXXX")"
+cleanup() { rmdir "$LOCK" 2>/dev/null || true; rm -rf "$TMP"; }
+trap cleanup EXIT
+
+common=(--mode "$MODE" --resolution "$DPI" -x "$WIDTH" -y "$HEIGHT" --format=png)
+
+if [[ "$BATCH" == "yes" ]]; then
+  "$SCANIMAGE" -d "$DEVICE" --source "$SOURCE" --batch-scan=yes \
+    "${common[@]}" --batch="$TMP/page-%03d.png" >/dev/null
+  pages=("$TMP"/page-*.png)
+  if [[ ! -e "${pages[1]}" ]]; then
+    echo "Автоподатчик не обнаружил страниц." >&2
+    exit 1
+  fi
+  if [[ "$FORMAT" == "png" ]]; then
+    mkdir -p "$OUT"
+    i=1
+    for p in "${pages[@]}"; do
+      cp "$p" "$OUT/$(basename "${OUT%.png}")-$i.png"
+      i=$((i+1))
+    done
+    RESULT="$OUT"
+  else
+    for p in "${pages[@]}"; do
+      sips -s format pdf "$p" --out "${p%.png}.pdf" >/dev/null
+    done
+    if [[ -x "$MERGEPDF" ]]; then
+      "$MERGEPDF" "$OUT" "$TMP"/page-*.pdf
+    else
+      OUT="${OUT%.pdf}"
+      mkdir -p "$OUT"
+      cp "$TMP"/page-*.pdf "$OUT"/
+    fi
+    RESULT="$OUT"
+  fi
+else
+  "$SCANIMAGE" -d "$DEVICE" --source "$SOURCE" \
+    "${common[@]}" -o "$TMP/page.png" >/dev/null
+  if [[ "$FORMAT" == "png" ]]; then
+    cp "$TMP/page.png" "$OUT"
+  else
+    sips -s format pdf "$TMP/page.png" --out "$OUT" >/dev/null
+  fi
+  RESULT="$OUT"
+fi
+
+echo "$RESULT"
+if [[ "$DO_OPEN" == "1" ]]; then
+  open "$RESULT"
+fi

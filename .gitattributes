@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.sh text eol=lf
+*.cs text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.patch text eol=lf
+*.dylib binary
+*.so binary
+*.exe binary
+*.dll binary

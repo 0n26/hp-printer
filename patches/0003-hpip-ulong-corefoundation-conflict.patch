@@ -1,0 +1,12 @@
+--- a/ip/hpip.h
++++ b/ip/hpip.h
+@@ -67,7 +67,9 @@
+ typedef unsigned short USHORT, *PUSHORT, FAR *LPUSHORT;
+ typedef unsigned int DWORD, *PDWORD, FAR *LPDWORD;
+ typedef unsigned int UINT, *PUINT, FAR *LPUINT;
++#ifndef __COREFOUNDATION_CFPLUGINCOM__
+ typedef unsigned long ULONG, *PULONG, FAR *LPULONG;
++#endif
+ #ifndef FALSE
+ #define FALSE			0
+ #endif
