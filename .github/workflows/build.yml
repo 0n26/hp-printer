@@ -24,16 +24,20 @@ jobs:
         run: dotnet publish windows/Hp3055Scan/Hp3055Scan.csproj -c Release -r win-x64 --self-contained -o publish/console
       - name: Build GUI
         run: dotnet publish windows/Hp3055ScanGUI/Hp3055ScanGUI/Hp3055ScanGUI.csproj -c Release -r win-x64 --self-contained -o publish/gui
+      - name: Package console
+        run: Compress-Archive -Path publish/console/* -DestinationPath hp3055scan-windows-console-x64.zip
+      - name: Package GUI
+        run: Compress-Archive -Path publish/gui/* -DestinationPath hp3055scan-windows-gui-x64.zip
       - name: Upload console
         uses: actions/upload-artifact@v4
         with:
           name: hp3055scan-windows-console-x64
-          path: publish/console/
+          path: hp3055scan-windows-console-x64.zip
       - name: Upload GUI
         uses: actions/upload-artifact@v4
         with:
           name: hp3055scan-windows-gui-x64
-          path: publish/gui/
+          path: hp3055scan-windows-gui-x64.zip
 
   build-macos:
     name: Build macOS backend (arm64)
@@ -41,23 +45,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install build dependencies
-        run: |
-          brew install gawk libtool libusb net-snmp sane-backends
+        run: brew install gawk libtool libusb net-snmp sane-backends
       - name: Build HPLIP backend
         run: ./build-from-source.sh --build-only
-      - name: Upload artifacts
+      - name: Package macOS
+        run: |
+          tar -czf hp3055scan-macos-arm64.tar.gz \
+            artifacts/ install.sh build-from-source.sh patches/ \
+            README.md WINDOWS.md VERSION LICENSE
+      - name: Upload macOS
         uses: actions/upload-artifact@v4
         with:
           name: hp3055scan-macos-arm64
-          path: |
-            artifacts/
-            install.sh
-            build-from-source.sh
-            patches/
-            README.md
-            WINDOWS.md
-            VERSION
-            LICENSE
+          path: hp3055scan-macos-arm64.tar.gz
 
   release:
     name: Create Release
@@ -65,27 +65,25 @@ jobs:
     needs: [build-windows, build-macos]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Download Windows console
+      - name: Download console zip
         uses: actions/download-artifact@v4
         with:
           name: hp3055scan-windows-console-x64
-          path: release/console
-      - name: Download Windows GUI
+          path: release/
+      - name: Download GUI zip
         uses: actions/download-artifact@v4
         with:
           name: hp3055scan-windows-gui-x64
-          path: release/gui
-      - name: Download macOS backend
+          path: release/
+      - name: Download macOS tarball
         uses: actions/download-artifact@v4
         with:
           name: hp3055scan-macos-arm64
-          path: release/macos
+          path: release/
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/console/**
-            release/gui/**
-            release/macos/**
+            release/*.zip
+            release/*.tar.gz
           generate_release_notes: true
