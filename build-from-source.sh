@@ -34,6 +34,11 @@ mkdir -p "$SRC"
 tar -xf "$WORK/hplip.tar.xz" -C "$SRC"
 cd "$SRC"/*
 
+echo "==> Нормализация окончаний строк"
+# orblite.c в исходниках HPLIP поставляется с CRLF; переводим в LF,
+# чтобы LF-патчи применялись на любой системе.
+sed -i.bak 's/\r$//' scan/sane/orblite.c && rm -f scan/sane/orblite.c.bak
+
 echo "==> Применение патчей"
 for p in "$HERE"/patches/*.patch; do
   echo "    $(basename "$p")"
